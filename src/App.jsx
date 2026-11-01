@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  Clock, Star, Volume2, RotateCcw, Award, Compass, 
-  Target, PieChart, Palette, Printer, Lock, CheckCircle2, 
-  ChevronLeft, Sparkles, BookOpen, PenTool, Eraser
+  Clock, Star, Volume2, Award, 
+  Printer, Lock, Sparkles, PenTool, Eraser, ChevronLeft
 } from 'lucide-react';
 
-// --- KONFIGURASI KURIKULUM MINGGUAN (Mudah Diupdate Tiap Minggu) ---
+// --- SEMUA MODUL MINGGUAN DIBUKA (UNLOCKED) ---
 const WEEKLY_MODULES = [
   {
     id: 'week-1',
@@ -24,7 +23,7 @@ const WEEKLY_MODULES = [
     subtitle: 'Penjumlahan & Pengurangan Ratusan',
     icon: '⛰️',
     color: 'from-sky-400 to-blue-500',
-    unlocked: false,
+    unlocked: true,
   },
   {
     id: 'week-3',
@@ -33,7 +32,7 @@ const WEEKLY_MODULES = [
     subtitle: 'Konsep Perkalian Sebagai Penjumlahan Berulang',
     icon: '🌳',
     color: 'from-emerald-400 to-teal-500',
-    unlocked: false,
+    unlocked: true,
   },
   {
     id: 'week-4',
@@ -42,7 +41,7 @@ const WEEKLY_MODULES = [
     subtitle: 'Mengenal Sisi, Sudut, dan Titik Sudut',
     icon: '🏰',
     color: 'from-purple-400 to-indigo-500',
-    unlocked: false,
+    unlocked: true,
   }
 ];
 
@@ -82,36 +81,32 @@ const SOAL_CERITA = [
 ];
 
 export default function App() {
-  // Navigasi Utama: 'map' | 'week-1'
   const [screen, setScreen] = useState('map');
   const [activeTab, setActiveTab] = useState('eksplor');
   
-  // State Skor & Bintang (Tersimpan di Tablet)
   const [stars, setStars] = useState(() => {
     const saved = localStorage.getItem('mtk_sd2_stars');
     return saved ? parseInt(saved, 10) : 0;
   });
 
-  // State Modul 1: Eksplorasi Jam
   const [hour, setHour] = useState(7);
   const [minute, setMinute] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // State Modul 2: Kuis Waktu Tepat
-  const [targetHour, setTargetHour] = useState(3);
-  const [tepatOptions, setTepatOptions] = useState([2, 3, 6, 9]);
-  const [tepatFeedback, setTepatFeedback] = useState('');
+  // State Kuis Variatif (Jam & Menit)
+  const [quizTargetH, setQuizTargetH] = useState(3);
+  const [quizTargetM, setQuizTargetM] = useState(0);
+  const [quizOptions, setQuizOptions] = useState([]);
+  const [quizCorrectAnswer, setQuizCorrectAnswer] = useState('');
+  const [quizFeedback, setQuizFeedback] = useState('');
 
-  // State Modul 4: Soal Cerita & Papan Coret
   const [storyIdx, setStoryIdx] = useState(0);
   const [storyFeedback, setStoryFeedback] = useState('');
   const [showScratchpad, setShowScratchpad] = useState(false);
 
-  // State Modul 5: Studio Karya DIY
   const [frameStyle, setFrameStyle] = useState('bear');
   const [customName, setCustomName] = useState('Karya Jamku');
 
-  // Referensi Audio & Canvas
   const audioCtxRef = useRef(null);
   const canvasRef = useRef(null);
   const isDrawingRef = useRef(false);
@@ -121,10 +116,9 @@ export default function App() {
   }, [stars]);
 
   useEffect(() => {
-    generateTepatQuiz();
+    generateVariedQuiz();
   }, []);
 
-  // --- SISTEM AUDIO SINTETIS & SUARA BAHASA INDONESIA ---
   const initAudio = () => {
     if (!audioCtxRef.current) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -170,9 +164,7 @@ export default function App() {
         osc.start(now);
         osc.stop(now + 0.08);
       }
-    } catch (e) {
-      // Fallback aman
-    }
+    } catch (e) {}
   };
 
   const playChime = () => {
@@ -225,7 +217,6 @@ export default function App() {
     }
   };
 
-  // --- LOGIKA JAM & KUIS ---
   const changeTime = (dh, dm) => {
     let newH = hour + dh;
     let newM = minute + dm;
@@ -246,30 +237,45 @@ export default function App() {
     speakText(getReadableTime(newH, newM));
   };
 
-  const generateTepatQuiz = () => {
+  // --- GENERATE KUIS VARIATIF (JAM TEPAT & PECAHAN MENIT) ---
+  const generateVariedQuiz = () => {
     const randH = Math.floor(Math.random() * 12) + 1;
-    setTargetHour(randH);
-    const opts = [randH];
+    const possibleMinutes = [0, 15, 30, 45];
+    const randM = possibleMinutes[Math.floor(Math.random() * possibleMinutes.length)];
+    
+    setQuizTargetH(randH);
+    setQuizTargetM(randM);
+
+    const correctStr = `${randH.toString().padStart(2, '0')}:${randM.toString().padStart(2, '0')}`;
+    setQuizCorrectAnswer(correctStr);
+
+    const opts = [correctStr];
     while (opts.length < 4) {
-      const r = Math.floor(Math.random() * 12) + 1;
-      if (!opts.includes(r)) opts.push(r);
+      const hOpt = Math.floor(Math.random() * 12) + 1;
+      const mOpt = possibleMinutes[Math.floor(Math.random() * possibleMinutes.length)];
+      const optStr = `${hOpt.toString().padStart(2, '0')}:${mOpt.toString().padStart(2, '0')}`;
+      if (!opts.includes(optStr)) {
+        opts.push(optStr);
+      }
     }
     opts.sort(() => Math.random() - 0.5);
-    setTepatOptions(opts);
-    setTepatFeedback('');
+    setQuizOptions(opts);
+    setQuizFeedback('');
   };
 
-  const handleTepatAnswer = (selected) => {
-    if (selected === targetHour) {
+  const handleQuizAnswer = (selected) => {
+    if (selected === quizCorrectAnswer) {
       playSound('correct');
       confetti({ particleCount: 55, spread: 60, origin: { y: 0.7 } });
       setStars(s => s + 1);
-      setTepatFeedback('🎉 Hebat! Jawabanmu Benar! (+1 ⭐)');
-      speakText(`Hebat! Pukul ${targetHour} tepat!`);
-      setTimeout(() => generateTepatQuiz(), 1600);
+      setQuizFeedback('🎉 Hebat! Jawabanmu Benar! (+1 ⭐)');
+      speakText(`Hebat! Pukul ${quizTargetH} lewat ${quizTargetM} menit!`);
+      setTimeout(() => generateVariedQuiz(), 1600);
     } else {
-      playSound('wrong');
-      setTepatFeedback('Coba perhatikan lagi jarum pendek merahnya ya 😊');
+      playSound('wrong'); // Suara salah berbunyi di sini
+      const pesanSalah = 'Coba perhatikan lagi posisi jarum pendek dan panjangnya ya 😊';
+      setQuizFeedback(pesanSalah);
+      speakText(pesanSalah); // Suara bacaan bantuan juga berbunyi
     }
   };
 
@@ -286,11 +292,12 @@ export default function App() {
       }, 1600);
     } else {
       playSound('wrong');
-      setStoryFeedback('Belum tepat, ayo baca ceritanya pelan-pelan lagi 😊');
+      const pesanSalah = 'Belum tepat, ayo baca ceritanya pelan-pelan lagi 😊';
+      setStoryFeedback(pesanSalah);
+      speakText(pesanSalah);
     }
   };
 
-  // --- LOGIKA PAPAN CORETAN (SCRATCHPAD) ---
   const startDraw = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -329,7 +336,6 @@ export default function App() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  // Komponen Jam Analog Reusable
   const renderAnalogClock = (h, m, interactive = false, size = 256) => {
     const radius = size / 2;
     const numRadius = radius - 34;
@@ -342,7 +348,6 @@ export default function App() {
         className="relative bg-white rounded-full border-[10px] border-blue-500 shadow-inner flex items-center justify-center select-none"
         style={{ width: size, height: size }}
       >
-        {/* Indikator Menit Luar (00, 05 ... 55) */}
         {Array.from({ length: 12 }).map((_, idx) => {
           const val = idx * 5;
           const angle = (val * 6 - 90) * (Math.PI / 180);
@@ -359,7 +364,6 @@ export default function App() {
           );
         })}
 
-        {/* Angka Jam 1 - 12 */}
         {Array.from({ length: 12 }).map((_, idx) => {
           const num = idx + 1;
           const angle = (num * 30 - 90) * (Math.PI / 180);
@@ -386,7 +390,6 @@ export default function App() {
           );
         })}
 
-        {/* Jarum Pendek (Jam) */}
         <div
           className="absolute w-2.5 bg-rose-500 rounded-full origin-bottom shadow-md transition-transform duration-300 pointer-events-none"
           style={{
@@ -396,7 +399,6 @@ export default function App() {
           }}
         />
 
-        {/* Jarum Panjang (Menit) */}
         <div
           className="absolute w-1.5 bg-blue-600 rounded-full origin-bottom shadow-md transition-transform duration-300 pointer-events-none"
           style={{
@@ -406,7 +408,6 @@ export default function App() {
           }}
         />
 
-        {/* Poros Tengah */}
         <div className="absolute w-4 h-4 bg-slate-800 rounded-full border-2 border-white z-20 pointer-events-none" />
       </div>
     );
@@ -415,7 +416,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 via-amber-50 to-orange-100 text-slate-800 pb-16 select-none font-sans">
       
-      {/* HEADER UTAMA */}
       <header className="bg-white/95 backdrop-blur sticky top-0 z-30 px-4 py-3 shadow-sm border-b-2 border-amber-200">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -457,7 +457,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* LAYAR 1: PETA PETUALANGAN MINGGUAN */}
+      {/* LAYAR 1: PETA MINGGUAN (SEMUA UNLOCKED) */}
       {screen === 'map' && (
         <main className="max-w-xl mx-auto px-4 mt-5 space-y-4">
           <div className="bg-white rounded-3xl p-4 shadow-md border-2 border-amber-200 flex items-center gap-3">
@@ -465,7 +465,7 @@ export default function App() {
             <div>
               <h2 className="font-extrabold text-sm text-amber-700">Halo Petualang Cilik!</h2>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Pilih pulau misi mingguanmu di bawah ini. Kumpulkan bintang sebanyak-banyaknya ya!
+                Semua pulau misi sudah terbuka! Pilih pulau materi belajarmu di bawah ini.
               </p>
             </div>
           </div>
@@ -475,18 +475,10 @@ export default function App() {
               <div
                 key={mod.id}
                 onClick={() => {
-                  if (mod.unlocked) {
-                    playSound('pop');
-                    setScreen(mod.id);
-                  } else {
-                    playSound('wrong');
-                  }
+                  playSound('pop');
+                  setScreen(mod.id);
                 }}
-                className={`relative rounded-3xl p-5 border-2 transition-all ${
-                  mod.unlocked
-                    ? 'bg-white border-amber-300 shadow-lg hover:scale-[1.01] cursor-pointer'
-                    : 'bg-slate-100 border-slate-200 opacity-75 cursor-not-allowed'
-                }`}
+                className="relative rounded-3xl p-5 border-2 bg-white border-amber-300 shadow-lg hover:scale-[1.01] cursor-pointer transition-all"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
@@ -502,15 +494,9 @@ export default function App() {
                     </div>
                   </div>
                   <div>
-                    {mod.unlocked ? (
-                      <span className="bg-emerald-500 text-white px-3 py-2 rounded-xl font-bold text-xs shadow flex items-center gap-1">
-                        Main <Sparkles className="w-3.5 h-3.5" />
-                      </span>
-                    ) : (
-                      <div className="bg-slate-200 text-slate-500 p-2.5 rounded-xl">
-                        <Lock className="w-5 h-5" />
-                      </div>
-                    )}
+                    <span className="bg-emerald-500 text-white px-3 py-2 rounded-xl font-bold text-xs shadow flex items-center gap-1">
+                      Main <Sparkles className="w-3.5 h-3.5" />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -519,15 +505,14 @@ export default function App() {
         </main>
       )}
 
-      {/* LAYAR 2: MISI MINGGU 1 (WAKTU: JAM & MENIT) */}
+      {/* LAYAR 2: MINGGU 1 */}
       {screen === 'week-1' && (
         <main className="max-w-xl mx-auto px-4 mt-3">
           
-          {/* Navigasi Sub-Modul Minggu 1 */}
           <div className="grid grid-cols-5 gap-1.5 bg-white p-1.5 rounded-2xl shadow-sm border border-amber-200 mb-3 text-center">
             {[
               { id: 'eksplor', label: '🧭 Jam' },
-              { id: 'tepat', label: '🎯 Tepat' },
+              { id: 'tepat', label: '🎯 Kuis' },
               { id: 'pecahan', label: '🍰 Menit' },
               { id: 'cerita', label: '📖 Cerita' },
               { id: 'karya', label: '🎨 Karya' },
@@ -549,35 +534,29 @@ export default function App() {
             ))}
           </div>
 
-          {/* Balon Maskot Kiko */}
           <div className="bg-amber-50/90 border border-amber-300 rounded-2xl p-3 flex items-center gap-3 shadow-sm mb-3">
             <div className={`text-3xl transition-transform ${isSpeaking ? 'scale-125 animate-bounce' : ''}`}>
               🐱
             </div>
             <p className="text-xs font-medium text-slate-700 leading-snug">
               {activeTab === 'eksplor' && 'Sentuh angka 1 sampai 12 pada jam atau tekan tombol di bawah untuk memutar jarum!'}
-              {activeTab === 'tepat' && 'Jika jarum panjang biru menunjuk ke angka 12, lihat jarum pendek merahnya untuk tahu jam berapa!'}
+              {activeTab === 'tepat' && 'Tebak jam dan pecahan menit yang ditunjukkan pada jarum jam!'}
               {activeTab === 'pecahan' && 'Bayangkan jam seperti kue bundar! Ketuk kartu 15, 30, atau 45 menit untuk melihat jarumnya.'}
               {activeTab === 'cerita' && 'Yuk bantu teman-teman kita membaca waktu kegiatan sehari-hari!'}
               {activeTab === 'karya' && 'Pilih bingkai kesukaanmu lalu cetak untuk digunting dan ditempel di karton!'}
             </p>
           </div>
 
-          {/* SUB-MODUL 1: EKSPLORASI JAM ANALOG & DIGITAL (BEBAS TEKS MENUMPUK) */}
           {activeTab === 'eksplor' && (
             <div className="bg-white rounded-3xl p-5 shadow-lg border-2 border-amber-200 flex flex-col items-center">
-              
-              {/* Jam Analog */}
               <div className="my-2">
                 {renderAnalogClock(hour, minute, true, 256)}
               </div>
 
-              {/* Petunjuk terpisah rapi */}
               <p className="text-[11px] font-semibold text-slate-400 mt-2 mb-2 text-center">
                 👆 Sentuh angka 1 – 12 di dalam jam untuk memindahkan jarum pendek
               </p>
 
-              {/* Legenda Jarum Rapi (Tidak Menumpuk) */}
               <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold mb-4 bg-slate-50 px-4 py-2 rounded-full border border-slate-200">
                 <span className="flex items-center gap-1.5 text-rose-500">
                   <span className="w-3 h-3 bg-rose-500 rounded-full inline-block" />
@@ -589,14 +568,12 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Jam Digital */}
               <div className="bg-slate-900 text-emerald-400 px-6 py-2.5 rounded-2xl font-mono text-4xl font-bold shadow tracking-widest border-2 border-slate-700 flex items-center justify-center gap-1">
                 <span>{hour.toString().padStart(2, '0')}</span>
                 <span className="animate-pulse">:</span>
                 <span>{minute.toString().padStart(2, '0')}</span>
               </div>
 
-              {/* Tombol Suara Bacaan */}
               <button
                 onClick={() => speakText(getReadableTime(hour, minute))}
                 className="mt-3 w-full max-w-xs bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 text-amber-900 px-4 py-2.5 rounded-2xl flex items-center justify-between active:scale-95 transition shadow-sm"
@@ -608,7 +585,6 @@ export default function App() {
                 <span className="text-xl bg-white p-1.5 rounded-xl shadow-sm">📣</span>
               </button>
 
-              {/* Pengatur Cepat */}
               <div className="w-full bg-slate-50 p-3.5 rounded-2xl border border-slate-200 mt-4">
                 <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
                   Atur Cepat:
@@ -647,41 +623,40 @@ export default function App() {
             </div>
           )}
 
-          {/* SUB-MODUL 2: WAKTU TEPAT (01.00 - 12.00) */}
+          {/* SUB-MODUL: KUIS VARIATIF (JAM & MENIT) */}
           {activeTab === 'tepat' && (
             <div className="bg-white rounded-3xl p-5 shadow-lg border-2 border-sky-200 flex flex-col items-center text-center">
               <span className="bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded-full text-xs">
-                Tantangan Waktu Tepat (01.00 s.d. 12.00)
+                Tantangan Kuis Jam & Menit Variatif
               </span>
               <h2 className="text-lg font-extrabold text-slate-700 mt-1 mb-2">
                 Pukul Berapakah Ini?
               </h2>
 
               <div className="my-2">
-                {renderAnalogClock(targetHour, 0, false, 220)}
+                {renderAnalogClock(quizTargetH, quizTargetM, false, 220)}
               </div>
 
               <div className="grid grid-cols-2 gap-2.5 w-full max-w-xs mt-4">
-                {tepatOptions.map((opt) => (
+                {quizOptions.map((opt) => (
                   <button
                     key={opt}
-                    onClick={() => handleTepatAnswer(opt)}
+                    onClick={() => handleQuizAnswer(opt)}
                     className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-bold py-3 rounded-2xl text-sm shadow transition"
                   >
-                    Pukul {opt.toString().padStart(2, '0')}.00
+                    Pukul {opt}
                   </button>
                 ))}
               </div>
 
-              {tepatFeedback && (
-                <div className="mt-4 font-bold text-sm text-amber-700 bg-amber-50 px-4 py-2 rounded-xl border border-amber-200">
-                  {tepatFeedback}
+              {quizFeedback && (
+                <div className={`mt-4 font-bold text-sm px-4 py-2 rounded-xl border ${quizFeedback.includes('🎉') ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
+                  {quizFeedback}
                 </div>
               )}
             </div>
           )}
 
-          {/* SUB-MODUL 3: PECAHAN MENIT (15, 30, 45 MENIT) */}
           {activeTab === 'pecahan' && (
             <div className="bg-white rounded-3xl p-5 shadow-lg border-2 border-emerald-200 space-y-3">
               <div className="text-center mb-2">
@@ -741,7 +716,6 @@ export default function App() {
             </div>
           )}
 
-          {/* SUB-MODUL 4: SOAL CERITA + PAPAN CORETAN */}
           {activeTab === 'cerita' && (
             <div className="bg-white rounded-3xl p-5 shadow-lg border-2 border-amber-200 flex flex-col items-center">
               <div className="flex items-center justify-between w-full mb-2">
@@ -810,14 +784,13 @@ export default function App() {
               </div>
 
               {storyFeedback && (
-                <div className="mt-3 font-bold text-sm text-emerald-700 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200">
+                <div className={`mt-3 font-bold text-sm px-4 py-2 rounded-xl border ${storyFeedback.includes('🌟') ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
                   {storyFeedback}
                 </div>
               )}
             </div>
           )}
 
-          {/* SUB-MODUL 5: STUDIO KREASI JAM DIY (CETAK KARYA) */}
           {activeTab === 'karya' && (
             <div className="bg-white rounded-3xl p-5 shadow-lg border-2 border-purple-200 flex flex-col items-center">
               <span className="bg-purple-100 text-purple-700 font-bold px-3 py-1 rounded-full text-xs">
@@ -864,7 +837,6 @@ export default function App() {
                 className="border-2 border-purple-200 rounded-xl px-3 py-1.5 text-center font-bold text-xs text-purple-800 mb-3 focus:outline-none focus:border-purple-500"
               />
 
-              {/* Area Preview Karya */}
               <div className="border-2 border-dashed border-purple-300 p-5 rounded-3xl bg-purple-50/40 flex flex-col items-center w-full">
                 <p className="font-extrabold text-sm text-purple-800 mb-3">{customName}</p>
 
