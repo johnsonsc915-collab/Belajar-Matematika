@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
-  Clock, Star, Volume2, Award, 
-  Printer, Lock, Sparkles, PenTool, Eraser, ChevronLeft
+  Clock, Star, Volume2, 
+  Printer, Sparkles, PenTool, Eraser, ChevronLeft
 } from 'lucide-react';
 
 // --- SEMUA MODUL MINGGUAN DIBUKA (UNLOCKED) ---
@@ -237,7 +237,6 @@ export default function App() {
     speakText(getReadableTime(newH, newM));
   };
 
-  // --- GENERATE KUIS VARIATIF (JAM TEPAT & PECAHAN MENIT) ---
   const generateVariedQuiz = () => {
     const randH = Math.floor(Math.random() * 12) + 1;
     const possibleMinutes = [0, 15, 30, 45];
@@ -272,10 +271,10 @@ export default function App() {
       speakText(`Hebat! Pukul ${quizTargetH} lewat ${quizTargetM} menit!`);
       setTimeout(() => generateVariedQuiz(), 1600);
     } else {
-      playSound('wrong'); // Suara salah berbunyi di sini
+      playSound('wrong');
       const pesanSalah = 'Coba perhatikan lagi posisi jarum pendek dan panjangnya ya 😊';
       setQuizFeedback(pesanSalah);
-      speakText(pesanSalah); // Suara bacaan bantuan juga berbunyi
+      speakText(pesanSalah);
     }
   };
 
@@ -457,7 +456,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* LAYAR 1: PETA MINGGUAN (SEMUA UNLOCKED) */}
       {screen === 'map' && (
         <main className="max-w-xl mx-auto px-4 mt-5 space-y-4">
           <div className="bg-white rounded-3xl p-4 shadow-md border-2 border-amber-200 flex items-center gap-3">
@@ -505,7 +503,6 @@ export default function App() {
         </main>
       )}
 
-      {/* LAYAR 2: MINGGU 1 */}
       {screen === 'week-1' && (
         <main className="max-w-xl mx-auto px-4 mt-3">
           
@@ -623,7 +620,6 @@ export default function App() {
             </div>
           )}
 
-          {/* SUB-MODUL: KUIS VARIATIF (JAM & MENIT) */}
           {activeTab === 'tepat' && (
             <div className="bg-white rounded-3xl p-5 shadow-lg border-2 border-sky-200 flex flex-col items-center text-center">
               <span className="bg-sky-100 text-sky-700 font-bold px-3 py-1 rounded-full text-xs">
